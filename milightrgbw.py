@@ -4,6 +4,7 @@
 import logging
 import socket
 import struct
+import sys
 import time
 
 
@@ -93,6 +94,8 @@ class MiLightRGBW():
         self.bridge_address = bridge_address
         self.bridge_port = bridge_port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        if self.bridge_address.endswith("255"):
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
     def build_command(self, command, value=0):
         return struct.pack("!BBB",
@@ -139,6 +142,7 @@ class TestMiLightRGBW():
         self.test("all_on")
         self.log.debug("Restoring RGB brightness")
         self.test(["rgb:160", self.brightness_max])
+        time.sleep(1)
         self.log.debug("Restoring White brightness")
         self.test(["all_white", self.brightness_max])
         time.sleep(2)
@@ -211,5 +215,8 @@ class TestMiLightRGBW():
 
 
 if __name__ == "__main__":
-    tester = TestMiLightRGBW('10.0.88.50', loglevel=logging.DEBUG)
+    bridge_address = "255.255.255.255"
+    if len(sys.argv) > 1:
+        bridge_address = sys.argv[1]
+    tester = TestMiLightRGBW(bridge_address, loglevel=logging.DEBUG)
     tester.test_all()
